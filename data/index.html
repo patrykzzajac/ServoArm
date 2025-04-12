@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Servo Arm</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="bg-black text-white">
+    <div class="container"></div>
+    <div class="flex flex-col items-center">
+      <h1 class="text-2xl">Servo Arm Control</h1>
+      <span class="mt-4">Grip</span>
+      <input type="range" id="grip" min="0" max="180" value="90" />
+      <span class="mt-4">Arm 1</span>
+      <input type="range" id="servo1" min="0" max="180" value="90" />
+      <span class="mt-4">Arm 2</span>
+      <input type="range" id="servo2" min="0" max="180" value="90" />
+      <span class="mt-4">Base</span>
+      <input type="range" id="base" min="0" max="180" value="90" />
+    </div>
+    <script>
+      document.querySelectorAll("input[type='range']").forEach((slider) => {
+        let debounceTimeout;
+        slider.addEventListener("input", () => {
+          handleSliderInput(slider);
+          clearTimeout(debounceTimeout);
+          debounceTimeout = setTimeout(() => {
+            sendMessage({ command: slider.id, angle: parseInt(slider.value) });
+          }, rateLimitMs);
+        });
+      });
+
+      const websocket = initializeWebSocket();
+      let lastSentTime = 0;
+      const rateLimitMs = 50;
+
+      function handleSliderInput(slider) {
+        const angle = parseInt(slider.value);
+        updateSliderDisplay(angle);
+        sendMessage({ command: slider.id, angle });
+      }
+
+      function updateSliderDisplay(angle) {
+        const sliderValue = document.getElementById("sliderValue");
+        if (sliderValue) sliderValue.textContent = angle;
+      }
+
+      function initializeWebSocket() {
+        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+        ws.onopen = () => console.log("WebSocket is open now.");
+        ws.onmessage = (event) =>
+          console.log("WebSocket message received:", event.data);
+        ws.onclose = () => console.log("WebSocket is closed now.");
+        ws.onerror = (event) =>
+          console.error("WebSocket error observed:", event);
+        return ws;
+      }
+
+      function sendMessage(message) {
+        const now = Date.now();
+        if (
+          now - lastSentTime >= rateLimitMs &&
+          websocket.readyState === WebSocket.OPEN
+        ) {
+          websocket.send(JSON.stringify(message));
+          lastSentTime = now;
+        } else if (websocket.readyState !== WebSocket.OPEN) {
+          console.log("WebSocket not connected. Message not sent.");
+        }
+      }
+    </script>
+  </body>
+</html>
