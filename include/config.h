@@ -2,8 +2,8 @@
 #define CONFIG_H
 
 // WiFi credentials
-#define WIFI_SSID "TP-Link_A474"
-#define WIFI_PASSWORD "bubketohuj"
+#define WIFI_SSID "SSID"
+#define WIFI_PASSWORD "PASSWORD"
 
 // servo pins
 // adjust as needed
